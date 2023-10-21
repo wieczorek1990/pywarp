@@ -18,12 +18,13 @@ class FIDOMetadataClient:
             res = requests.get(self.mds_url)
             res.raise_for_status()
             jwt_header = jwt.get_unverified_header(res.content)
-            assert jwt_header["alg"] == "ES256"
+            algorithm = jwt_header["alg"]
+            assert algorithm in {"ES256", "RS256"}
             cert = x509.load_der_x509_certificate(
                 jwt_header["x5c"][0].encode(), cryptography.hazmat.backends.default_backend()
             )
             # FIXME: test coverage
-            self._metadata_toc = jwt.decode(res.content, key=cert.public_key(), algorithms=["ES256"])  # type: ignore
+            self._metadata_toc = jwt.decode(res.content, key=cert.public_key(), algorithms=[algorithm])  # type: ignore
         return self._metadata_toc
 
     @lru_cache(64)
